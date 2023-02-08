@@ -375,13 +375,13 @@ void DrawGpsCanvas(void) {
   MyCanvas.setTextSize(1);
 
   MyCanvas.setCursor(0+ox,0+oy);
-  myLocator = compute_Locator(double(ubxMessage.NAV_PVT.lat/10000000.0d), double(ubxMessage.NAV_PVT.lon/10000000.0d));
+  myLocator = compute_Locator(double(ubxMessage.NAV_PVT.lat/10000000.0), double(ubxMessage.NAV_PVT.lon/10000000.0));
   MyCanvas.print(myLocator);
 
   MyCanvas.setCursor(0+ox,26+oy);
-  MyCanvas.print("Lat: "); MyCanvas.print(ubxMessage.NAV_PVT.lat/10000000.0d, DEC);
+  MyCanvas.print("Lat: "); MyCanvas.print(ubxMessage.NAV_PVT.lat/10000000.0, DEC);
   MyCanvas.setCursor(0+ox,36+oy);
-  MyCanvas.print("Lon:  "); MyCanvas.print(ubxMessage.NAV_PVT.lon/10000000.0d, DEC);
+  MyCanvas.print("Lon:  "); MyCanvas.print(ubxMessage.NAV_PVT.lon/10000000.0, DEC);
   MyCanvas.setCursor(85+ox, 0+oy);
   MyCanvas.print("SAT: ");     
   if (ubxMessage.NAV_PVT.num_sv < 10) MyCanvas.print("0");  
