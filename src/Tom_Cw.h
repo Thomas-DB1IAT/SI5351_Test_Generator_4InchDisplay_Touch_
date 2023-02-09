@@ -5,7 +5,7 @@
 extern int CheckTouchedButton(void); 
 
 
-void cw_string_proc(String str);
+void cw_string_proc(String str, bool TX);
 void cw_char_proc(char m);
 void cw(bool state);
 void ti();

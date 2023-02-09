@@ -4,10 +4,12 @@
 
 Si5351* MySi5351 = NULL;
 
-uint16_t duration = 65;    //75
+uint16_t duration = 40;    //75
 uint16_t hz = 750;         
 uint8_t  pinBeep = 2;
 uint8_t  stopIt  = 0;
+
+bool     MyTX = false;
 
 void DoCw(String cw_message, uint8_t ApinBeep, Si5351* Asi5351) {
   pinBeep = ApinBeep;
@@ -15,7 +17,7 @@ void DoCw(String cw_message, uint8_t ApinBeep, Si5351* Asi5351) {
   stopIt = 0;
   // CW-String ausgeben
   Serial.println(cw_message);
-  cw_string_proc(cw_message);
+  cw_string_proc(cw_message, true);
   if (stopIt == 0) {
     delay(500);                           
     // CW Tone ON
@@ -24,7 +26,7 @@ void DoCw(String cw_message, uint8_t ApinBeep, Si5351* Asi5351) {
     // CW Tone OFF
     cw(false);
     delay(500); 
-  }  
+  }
 }
 
 void cw_stopIt(void) {
@@ -34,7 +36,8 @@ void cw_stopIt(void) {
 //=====================================================
 // processing string to characters
 //=====================================================
-void cw_string_proc(String str) {
+void cw_string_proc(String str, bool TX) {
+  MyTX = TX;
   for (uint8_t j = 0; j < str.length(); j++) {
     cw_char_proc(str[j]);
     if (stopIt == 1) break;
@@ -161,12 +164,12 @@ void word_space() {
 //=====================================================
 void cw(bool state) {        
   if (state) {
-    MySi5351->output_enable(SI5351_CLK0, 1);
+    if (MyTX) MySi5351->output_enable(SI5351_CLK0, 1);
     //digitalWrite(PIN_TX, HIGH);
     tone(pinBeep, hz);
   }
   else {
-    MySi5351->output_enable(SI5351_CLK0, 0);
+    if (MyTX) MySi5351->output_enable(SI5351_CLK0, 0);
     //digitalWrite(PIN_TX, LOW);
     noTone(pinBeep);
   }

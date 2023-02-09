@@ -125,6 +125,15 @@ HardwareSerial SerialGps( 1 );
 #define RXD2 16
 #define TXD2 17
 
+//*******************************************************************************
+// Hardware Serial Connection for FT817
+//*******************************************************************************
+//#include <HardwareSerial.h>
+HardwareSerial Serial817( 2 );
+#define RXD3 26
+#define TXD3 27
+
+
 
 //*******************************************************************************
 // GPS-Module
@@ -212,6 +221,23 @@ bool    AgB        = false;
 #include "Wire.h"
 Si5351 si5351;
 
+//*******************************************************************************
+// Touch-Screen
+//*******************************************************************************
+//XPT2046_Touchscreen ts(TOUCH_CS, TOUCH_IRQ);  // Param 2 - Touch IRQ Pin - interrupt enabled polling
+// Initialize Touch
+XPT2046_Touchscreen ts(TOUCH_CS);  // Param 2 - Touch IRQ Pin - interrupt enabled polling
+
+TS_Point p;
+// Default-Settings Touch-Controller
+int   tx_max  = 259;
+int   ty_max  = 3862;
+int   tx_min  = 3924;
+int   ty_min  = 349;
+
+bool  isTouched   = false;
+bool  wastouched  = true;
+bool  AutoRepeat  = false;
 
 //*******************************************************************************
 // CW
@@ -319,25 +345,6 @@ void DoFrequnecyUp(void) {
   }
 }
 
-
-
-//*******************************************************************************
-// Touch-Screen
-//*******************************************************************************
-//XPT2046_Touchscreen ts(TOUCH_CS, TOUCH_IRQ);  // Param 2 - Touch IRQ Pin - interrupt enabled polling
-// Initialize Touch
-XPT2046_Touchscreen ts(TOUCH_CS);  // Param 2 - Touch IRQ Pin - interrupt enabled polling
-
-TS_Point p;
-// Default-Settings Touch-Controller
-int   tx_max  = 259;
-int   ty_max  = 3862;
-int   tx_min  = 3924;
-int   ty_min  = 349;
-
-bool  isTouched   = false;
-bool  wastouched  = true;
-bool  AutoRepeat  = false;
 
 //**********************************************************************
 // PLL Init and set Correction
@@ -581,7 +588,7 @@ void InitMenu1(void) {
       if (btn == 31) s = "STORE";
       if (btn == 32) s = "LOAD";
       if (btn == 33) s = "RESET";
-      if (ButtonAdd(6+x*BtnWidth, 86+i*BtnHeight, BtnWidth-2, BtnHeight-2, state, OnOff, s, LIGHTGREY, BLACK)) {
+      if (ButtonAdd(6+x*BtnWidth, 86+i*BtnHeight, BtnWidth-2, BtnHeight-2, state, OnOff, true, s, LIGHTGREY, BLACK)) {
         //Serial.print("Button Added "); Serial.println(s);
       } else {
         Serial.println("Error -> Button Not Added, nomore Space"); 
@@ -595,6 +602,11 @@ void InitMenu1(void) {
     }
   }  
   
+  // Invisible Buttons for Changing Channels
+  ButtonAdd(4,  5, 310, 20, state, OnOff, false, "36", LIGHTGREY, BLACK);
+  ButtonAdd(4, 27, 310, 20, state, OnOff, false, "37", LIGHTGREY, BLACK);
+  ButtonAdd(4, 49, 310, 20, state, OnOff, false, "38", LIGHTGREY, BLACK);
+
   //SetOnClick(0, &onClickFunction);
   SetAutoRepeat(18, true);
   SetAutoRepeat(19, true);
@@ -925,7 +937,7 @@ int InputBoxNum(int value, String Caption) {
   tft.setTextSize(2);
   for (int y=0; y<3; y++) {
     for (int x=0; x<5; x++) {
-      ButtonAdd(sx+(kw+1)*x, sy+(kh+1)*y, kw, kh, 0, false, v[i+1], BLUE, YELLOW);
+      ButtonAdd(sx+(kw+1)*x, sy+(kh+1)*y, kw, kh, 0, false, true, v[i+1], BLUE, YELLOW);
       i++;
     }
   }
@@ -1022,14 +1034,14 @@ String InputBoxAlp(String value, String Caption) {
   tft.setTextSize(2);
   for (int y=0; y<4; y++) {
     for (int x=0; x<10; x++) {
-      ButtonAdd(sx+(kw+1)*x, sy+(kh+1)*y, kw, kh, 0, false, v[i], BLUE, YELLOW);
+      ButtonAdd(sx+(kw+1)*x, sy+(kh+1)*y, kw, kh, 0, false, true, v[i], BLUE, YELLOW);
       i++;
     }
   }
-  ButtonAdd(sx, 247, kw, kh, 0, false, v[40], BLUE, YELLOW);
-  ButtonAdd(sx+kw+2, 247, 55, kh, 0, false, v[41], BLUE, YELLOW);
-  ButtonAdd(sx+86, 247, 57, kh, 0, false, v[42], BLUE, YELLOW);
-  ButtonAdd(sx+145, 247, 57, kh, 0, false, v[43], BLUE, YELLOW);
+  ButtonAdd(sx, 247, kw, kh, 0, false, true, v[40], BLUE, YELLOW);
+  ButtonAdd(sx+kw+2, 247, 55, kh, 0, false, true, v[41], BLUE, YELLOW);
+  ButtonAdd(sx+86, 247, 57, kh, 0, false, true, v[42], BLUE, YELLOW);
+  ButtonAdd(sx+145, 247, 57, kh, 0, false, true, v[43], BLUE, YELLOW);
   
   DrawButtons(-1);
   
@@ -1382,6 +1394,27 @@ void DoButtons(void) {
     }
     if (btn == 33) {
       ESP.restart();
+    }
+    if (btn == 36) {
+      AktChannel = 0;
+      SetButtonState(0, 1);
+      SetButtonState(1, 0);
+      SetButtonState(2, 0);
+      if (DisplayMode == 0) DrawPllCanvas();
+    }
+    if (btn == 37) {
+      AktChannel = 1;
+      SetButtonState(0, 0);
+      SetButtonState(1, 1);
+      SetButtonState(2, 0);
+      if (DisplayMode == 0) DrawPllCanvas();
+    }
+    if (btn == 38) {
+      AktChannel = 2;
+      SetButtonState(0, 0);
+      SetButtonState(1, 0);
+      SetButtonState(2, 1);
+      if (DisplayMode == 0) DrawPllCanvas();
     }
   }
 }

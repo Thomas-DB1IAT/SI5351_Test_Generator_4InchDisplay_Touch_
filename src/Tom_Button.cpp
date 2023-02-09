@@ -6,6 +6,7 @@
 
 #include <Arduino.h>
 #include "ILI9486_SPI.h"
+//#include "ILI9486_SPI.h"
 #include "Tom_Button.h"
 
 ILI9486_SPI* LocalTft = NULL;
@@ -100,8 +101,8 @@ void DrawDown(int btn) {
     LocalTft->getTextBounds(Button[btn].bText, 0, 0, &x1, &y1, &w, &h);
     LocalTft->fillRect(Button[btn].bxPos, Button[btn].byPos, Button[btn].bWidth, Button[btn].bHeight, Button[btn].bColor);
     if (Button[btn].OnOff) {
-      LocalTft->fillRect(Button[btn].bxPos+4, Button[btn].byPos+4, 6, 6, BLACK);
-      LocalTft->fillRect(Button[btn].bxPos+5, Button[btn].byPos+5, 4, 4, GREEN);
+      LocalTft->fillRect(Button[btn].bxPos+3, Button[btn].byPos+3, 5, 5, BLACK);
+      LocalTft->fillRect(Button[btn].bxPos+4, Button[btn].byPos+4, 3, 3, GREEN);
     }  
     LocalTft->drawFastHLine(Button[btn].bxPos+1, Button[btn].byPos+1, Button[btn].bWidth, DARKGREY);
     LocalTft->drawFastVLine(Button[btn].bxPos+1, Button[btn].byPos+1, Button[btn].bHeight, DARKGREY);
@@ -109,7 +110,7 @@ void DrawDown(int btn) {
     LocalTft->drawFastVLine(Button[btn].bxPos+Button[btn].bWidth, Button[btn].byPos+1, Button[btn].bHeight, WHITE);
     LocalTft->setCursor(Button[btn].bxPos+(Button[btn].bWidth/2)-(w/2)+3, Button[btn].byPos+(Button[btn].bHeight/2)-(h/2)+3);
     LocalTft->print(Button[btn].bText);
-  }
+  } //else LocalTft->drawRect(Button[btn].bxPos, Button[btn].byPos, Button[btn].bWidth, Button[btn].bHeight, Button[btn].bColor); 
 }
 
 void DrawUp(int btn) {
@@ -121,8 +122,8 @@ void DrawUp(int btn) {
   if (Button[btn].Visible) {
     LocalTft->fillRect(Button[btn].bxPos, Button[btn].byPos, Button[btn].bWidth, Button[btn].bHeight, Button[btn].bColor);
     if (Button[btn].OnOff) {
-      LocalTft->fillRect(Button[btn].bxPos+4, Button[btn].byPos+4, 6, 6, BLACK);
-      LocalTft->fillRect(Button[btn].bxPos+5, Button[btn].byPos+5, 4, 4, DARKGREY);
+      LocalTft->fillRect(Button[btn].bxPos+3, Button[btn].byPos+3, 5, 5, BLACK);
+      LocalTft->fillRect(Button[btn].bxPos+4, Button[btn].byPos+4, 3, 3, DARKGREY);
     }  
     
     LocalTft->getTextBounds(Button[btn].bText, 0, 0, &x1, &y1, &w, &h);
@@ -133,7 +134,7 @@ void DrawUp(int btn) {
     LocalTft->drawFastVLine(Button[btn].bxPos+1, Button[btn].byPos+1, Button[btn].bHeight, WHITE);
     LocalTft->drawFastHLine(Button[btn].bxPos+1, Button[btn].byPos+Button[btn].bHeight, Button[btn].bWidth, DARKGREY);
     LocalTft->drawFastVLine(Button[btn].bxPos+Button[btn].bWidth, Button[btn].byPos+1, Button[btn].bHeight, DARKGREY);
-  }  
+  } //else LocalTft->drawRect(Button[btn].bxPos, Button[btn].byPos, Button[btn].bWidth, Button[btn].bHeight, Button[btn].bColor); 
 }
 
 void DrawButtonOnState(int btn) {
@@ -173,7 +174,7 @@ void DrawButtons(int sel) {
   }
 }
 
-bool ButtonAdd(int xPos, int yPos, int width, int height, int State, bool OnOff, String Text, uint16_t bColor, uint16_t tColor) {
+bool ButtonAdd(int xPos, int yPos, int width, int height, int State, bool OnOff, bool Vis, String Text, uint16_t bColor, uint16_t tColor) {
   if (NumButtons < MaxButtons) {
     Button[NumButtons].bxPos      = xPos;
     Button[NumButtons].byPos      = yPos;
@@ -181,6 +182,7 @@ bool ButtonAdd(int xPos, int yPos, int width, int height, int State, bool OnOff,
     Button[NumButtons].bHeight    = height;
     Button[NumButtons].bState     = State;
     Button[NumButtons].OnOff      = OnOff;
+    Button[NumButtons].Visible    = Vis;
     Button[NumButtons].AutoRepeat = false;
     Button[NumButtons].bColor     = bColor;
     Button[NumButtons].tColor     = tColor;

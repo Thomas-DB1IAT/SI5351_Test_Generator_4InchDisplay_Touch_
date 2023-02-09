@@ -209,7 +209,7 @@ void TxWsprItems() {
 
 
 void WsprItemsClear() {
-  for (int i=0; i<=WSPR_SYMBOL_COUNT; i++) {
+  for (int i=0; i<WSPR_SYMBOL_COUNT; ++i) {
     mySymbols[i] = 0;
   }
 }
@@ -253,15 +253,25 @@ void wspr_message_prep(char * call, char * loc, uint8_t dbm)
 
   memcpy(MyCallsign, call, 6);
 
+  bool invalid = false;
   // Grid locator validation
   for(i = 0; i < 4; i++)
   {
     loc[i] = toupper(loc[i]);
     if(!(isdigit(loc[i]) || (loc[i] >= 'A' && loc[i] <= 'R')))
     {
-      loc = "AA00";
+      invalid = true;
+      break;
     }
   }
+  if(invalid)
+  {
+    memcpy(MyLocator, "AA00", 4);
+  }
+  else
+  {
+    memcpy(MyLocator, loc, 4);
+  }  
 
   memcpy(MyLocator, loc, 4);
 

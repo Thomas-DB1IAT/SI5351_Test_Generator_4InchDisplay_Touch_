@@ -5,6 +5,7 @@
 
 #include <Arduino.h>
 #include "ILI9486_SPI.h"
+//#include "ILI9486_SPI.h"
 
 #define BLACK     0x0000
 #define DARKGREY  0x7BEF
@@ -20,7 +21,7 @@
 typedef void (*callback_funct)(void); // type for conciseness
 
 void ButtonBegin(ILI9486_SPI* MyTft);
-bool ButtonAdd(int xPos, int yPos, int width, int height,  int State, bool OnOff, String Text, uint16_t bColor, uint16_t tColor);
+bool ButtonAdd(int xPos, int yPos, int width, int height,  int State, bool OnOff, bool Vis, String Text, uint16_t bColor, uint16_t tColor);
 void ClearButtons(void);
 void DrawButtonOnState(int btn);
 void DrawButtons(int sel);
