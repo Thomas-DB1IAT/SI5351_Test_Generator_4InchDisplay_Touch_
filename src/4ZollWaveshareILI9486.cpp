@@ -2,8 +2,8 @@
 
   Frequency Generator ESP32 and Si5351 PLL with GPS
 
-  ILI9341 incl. Touch
-  GPS
+  ILI9341 incl. Touch or ILI9386 inc. Touch
+  GPS UBLOX
   Si5351 PLL
   Rotary Encoder
 
@@ -28,8 +28,10 @@
             L  0  1  5           6  7     8  9  N  1  X  X  2  3  N
             K                                   D                 D
 
-  2.8Inch TFT SPI 320x240 V1.2 + resistive Touch + SD-Card Socket
+  2.8 Inch TFT SPI 320x240 V1.2 + resistive Touch + SD-Card Socket
   ILI9346 Driver
+  4.0 Inch TFT SPI 480x320 V2.2 + resistive Touch + SD-Card Socket
+  ILI9386 Driver -> different Layout but same Connections
           
           +----------------------------------------------------------------------------+
           |                                                                            |
@@ -55,17 +57,17 @@
   Si5351 3 Channel PLL 
          
          +----------------+
-         |   Top View     ++++ 
-         |                ||||| SMA 0
-     0   +                ++++
+         |   Top View     ---- 
+         |                //// SMA CLK0
+     0   +                ----
      1   +                |
-     2   +                ++++        
-   SCL   +  ESP32 ->  22  ||||| SMA 1    
-   SDA   +  ESP32 ->  21  ++++ 
+     2   +                ----        
+   SCL   +  ESP32 ->  22  //// SMA CLK1    
+   SDA   +  ESP32 ->  21  ---- 
    GND   +  ESP32 -> GND  |
-   VIN   +  ESP32 ->  5V  ++++ 
-         |                ||||| SMA 2  
-         |                ++++ 
+   VIN   +  ESP32 ->  5V  ---- 
+         |                //// SMA CLK2  
+         |                ---- 
          +----------------+    
  
 
@@ -84,8 +86,10 @@
  
 */
 
+// Store and Reload Configuration
 #include <Preferences.h>
 Preferences preferences;
+//
 #include <EEPROM.h>
 #define EEPROM_SIZE 60
 
@@ -139,10 +143,10 @@ HardwareSerial Serial817( 2 );
 // GPS-Module
 //*******************************************************************************
 UBXMessage ubxMessage;
-
+//
 String myLocator   = "AAaaJJ";
 int    msgType     = 0;
-
+//
 #define      ppsPin 4
 volatile int ppsPulse = 0;
 bool         GpsOk = false;
@@ -165,13 +169,14 @@ char UBLOX_INIT[] {
   //0xB5,0x62,0x06,0x01,0x08,0x00,0x01,0x07,0x00,0x00,0x00,0x00,0x00,0x00,0x17,0xDC, //NAV-PVT off
   //0xB5,0x62,0x06,0x01,0x08,0x00,0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x12,0xB9, //NAV-POSLLH off
   //0xB5,0x62,0x06,0x01,0x08,0x00,0x01,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x13,0xC0, //NAV-STATUS off
-  // Enable UBX
+  // Enable UBX NAV-PVT on
+  // Some of the Chinese Clones dont support NAV-PVT so we have to use POSLLH, STATUS and TIMEUTC
   0xB5,0x62,0x06,0x01,0x08,0x00,0x01,0x07,0x00,0x01,0x00,0x00,0x00,0x00,0x18,0xE1,   //NAV-PVT on
   //0xB5,0x62,0x06,0x01,0x08,0x00,0x01,0x02,0x00,0x01,0x00,0x00,0x00,0x00,0x13,0xBE,   //NAV-POSLLH  On
   //0xB5,0x62,0x06,0x01,0x08,0x00,0x01,0x03,0x00,0x01,0x00,0x00,0x00,0x00,0x14,0xC5,   //NAV-STATUS  On
   //0xB5,0x62,0x06,0x01,0x08,0x00,0x01,0x21,0x00,0x01,0x00,0x00,0x00,0x00,0x32,0x97,   //NAV-TIMEUTC On 
 
-  // Rate 1Hz / 10Hz
+  // Rate 1Hz / 10Hz Setting the 1 PPS OUTPUT to the Frequency we want
   0xB5,0x62,0x06,0x31,0x20,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x0A,0x00,
   0x00,0x00,0x00,0x00,0x00,0x80,0x00,0x00,0x00,0x80,0x00,0x00,0x00,0x00,0x6F,0x00,0x00,0x00,0xD3,0x9E
 };
@@ -230,6 +235,11 @@ XPT2046_Touchscreen ts(TOUCH_CS);  // Param 2 - Touch IRQ Pin - interrupt enable
 
 TS_Point p;
 // Default-Settings Touch-Controller
+//int   tx_max  = 293;
+//int   ty_max  = 3765;
+//int   tx_min  = 3914;
+//int   ty_min  = 225;
+// Reserve
 int   tx_max  = 259;
 int   ty_max  = 3862;
 int   tx_min  = 3924;
@@ -249,6 +259,7 @@ String cw_message2 = " = PWR IS 10mW = ANT IS VERTICAL WIRE";
 String EingabeText = "THOMAS";
 
 #define pinBeep    2
+// Screen and Touch Rotation
 #define myRotation 1
 
 volatile int interruptCounter;
@@ -263,7 +274,7 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 
 //*****************************************************************
-// format long variable with thousands seperator '.'
+// Format long variable with thousands seperator '.'
 //*****************************************************************
 char* ltoaKomma(long i){ 
 #define LONG_MAXWIDTH 14  // −2.147.483.648 = 10 digits + sign + 3 dots
@@ -287,9 +298,9 @@ char* ltoaKomma(long i){
   return p;
 }  
 
-//-----------------------------------------------------------------------------------------
+//*****************************************************************
 // Set Frequency of the Channel
-//-----------------------------------------------------------------------------------------
+//*****************************************************************
 bool SetChannelFrequency(int newFrequency) {
   bool isOk = false;
   if (newFrequency >= 100000) {
@@ -315,9 +326,9 @@ bool SetChannelFrequency(int newFrequency) {
   return isOk;
 }
 
-//-----------------------------------------------------------------------------------------
+//*****************************************************************
 // Frequency one Step up
-//-----------------------------------------------------------------------------------------
+//*****************************************************************
 void DoFrequnecyUp(void) {
   if (AktChannel == 0) {
     if (frequencyA+StepVal[StepNumA] <= 170000000) {
@@ -361,10 +372,6 @@ unsigned long oTime = millis();
 unsigned long mTime = millis();
 int           DisplayMode = 0;
 
-//**********************************************************************
-//  Get some Memory for Canvas
-//**********************************************************************
-// Testing Canvas
 
 //**********************************************************************
 //  GPS Canvas
@@ -519,9 +526,9 @@ void ISRpps(void) {
 }
 
 
-//-----------------------------------------------------------------------------------------
+//******************************************************************************
 //  Update Display
-//-----------------------------------------------------------------------------------------
+//******************************************************************************
 void UpdateDisplay(void) {
   Serial.println("UpdateDisplay");
   //tft.drawRect(0,0,320, 240, DARKGREY);
@@ -717,7 +724,9 @@ void LoadSettings(void) {
   //UpdateDisplay();
 }
 
-
+//******************************************************************************
+// Callback Try.... not used yet
+//******************************************************************************
 callback_funct onClickFunction; // variable to store function pointer type
 
 void Button0onClick(void) {
@@ -725,6 +734,9 @@ void Button0onClick(void) {
 }
 
 
+//******************************************************************************
+// Scanning for available WiFi Network APs
+//******************************************************************************
 void ScanWiFiNetwork(void) {
   Serial.println("scan start");
 
@@ -752,9 +764,9 @@ void ScanWiFiNetwork(void) {
 }
 
 
-//-----------------------------------------------------------------------------------------
+//******************************************************************************
 // The Rotary Encoder is Pushed
-//-----------------------------------------------------------------------------------------
+//******************************************************************************
 void DoRotaryPush(void) {
   if (digitalRead(pushPin) == LOW) {
     while (digitalRead(pushPin) == LOW) {
@@ -782,9 +794,9 @@ void DoRotaryPush(void) {
   }
 }
 
-//-----------------------------------------------------------------------------------------
+//******************************************************************************
 // Do the GPS Stuff
-//-----------------------------------------------------------------------------------------
+//******************************************************************************
 void DoGPS(void) {
   msgType = processGPS(&SerialGps, &ubxMessage);
   if ( msgType == MT_NAV_PVT ) {
@@ -792,9 +804,9 @@ void DoGPS(void) {
   }
 }
 
-//-----------------------------------------------------------------------------------------
+//******************************************************************************
 // Frequency one Step down
-//-----------------------------------------------------------------------------------------
+//******************************************************************************
 void DoFrequnecyDown(void) {
   if (AktChannel == 0) {
     if (frequencyA-StepVal[StepNumA] >= 100000) {
@@ -1171,10 +1183,10 @@ void MapTouchScreen(void) {
 }
 
 
-//-----------------------------------------------------------------------------------------
-// Do the TouchScreen Stuff
-//-----------------------------------------------------------------------------------------
-void DoButtons(void) {
+//******************************************************************************
+// Do the TouchScreen Stuff of the PLL Buttons
+//******************************************************************************
+void DoButtonsPll(void) {
   int btn = CheckTouchedButton();
   if (btn > -1) {
     //Serial.println(btn);
@@ -1566,7 +1578,7 @@ void loop(void) {
   }
   
   //DoGPS();          GPS is done 10 Times a Second in the Timer IQR
-  DoButtons();
+  DoButtonsPll();
   DoRotaryPush();
 
   if (DoRotaryChanged() == true) {
