@@ -1,4 +1,4 @@
-# 230208-210151-az-delivery-devkit-v4
+# SI5351_Test_Generator_4InchDisplay_Touch
 
 First Try for a ESP32 with a 4" Touchdisplay with some Buttons
 Uses a Si5351 Modul with 3 Channels to set Frequency and Phase
